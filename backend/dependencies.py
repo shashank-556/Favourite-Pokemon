@@ -50,7 +50,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme),db = Depends(get_
         if userid is None:
             raise credentials_exception
     except JWTError as e:
-        print(e)
+        # print(e)
         raise credentials_exception
     
     user = get_user_by_id(db,user_id=int(userid))
@@ -65,4 +65,5 @@ def authenticate_user(db, useremail: int, password: str):
     if not verify_password(password, user.password):
         return False
     return user
+
 

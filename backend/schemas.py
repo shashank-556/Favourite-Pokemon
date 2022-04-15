@@ -6,12 +6,11 @@ class userBaseModel(BaseModel) :
 
 class userOutputModel(userBaseModel) :
     id:int
-    pokemons: list[int] = []
     class Config:
         orm_mode = True
 
 class userInputModel(userBaseModel) :
-    password:str = Field(...,min_length=8,max_length=30)
+    password:str = Field(...,min_length=8)
 
 class Token(BaseModel):
     access_token: str

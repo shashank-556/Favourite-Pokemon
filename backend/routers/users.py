@@ -1,3 +1,4 @@
+from operator import ge
 import os
 import sys
 import inspect
@@ -6,22 +7,27 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir) 
 
-from fastapi import APIRouter, Depends,HTTPException
+from fastapi import APIRouter, Depends,HTTPException, Query
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from dependencies import get_db,get_password_hash,authenticate_user,create_access_token,get_current_user
 from schemas import userInputModel,userOutputModel,Token
-from crud import create_user,get_user_by_email
+from crud import create_user, delete_pokemon, get_pokemon,get_user_by_email,add_pokemon
 
 router = APIRouter(prefix="/user",tags=['Users'])
 
-@router.post('/register',status_code=201,response_model=userOutputModel)
+@router.post('/',status_code=201,response_model=userOutputModel)
 async def user_profile(usr:userInputModel,db:Session = Depends(get_db)) :
     if get_user_by_email(db,email=usr.email) :
         raise HTTPException(status_code=403,detail="An account with given email already exists")
     
     usr.password = get_password_hash(usr.password)
     return await create_user(usr=usr,db=db)
+
+
+@router.get('/',response_model=userOutputModel)
+async def user_profile(user = Depends(get_current_user)) :
+    return user
 
 
 @router.post('/login',response_model=Token,status_code=201)
@@ -38,6 +44,17 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-@router.get('/',response_model=userOutputModel)
-async def user_profile(user = Depends(get_current_user)) :
-    return user
+
+@router.post('/pokemon',status_code=201,tags=["Pokemons"])
+async def add_favourite_pokemons(q:int = Query(...,ge=1),user = Depends(get_current_user),db:Session = Depends(get_db)) :
+    await add_pokemon(db,user_id=user.id,pokemon_id=q)
+    return await get_pokemon(db,usr=user)
+
+@router.get('/pokemon',tags=["pokemons"])
+async def get_pokemons(user = Depends(get_current_user),db:Session = Depends(get_db)) :
+    return await get_pokemon(db,usr=user)
+
+@router.delete('/pokemon',tags=["pokemons"])
+async def delete_pokemons(user = Depends(get_current_user),db:Session = Depends(get_db),q:int = Query(...,gt=0)) :
+    await delete_pokemon(db,user_id=user.id,pokemon_id=q)
+    return await get_pokemon(db,usr=user)

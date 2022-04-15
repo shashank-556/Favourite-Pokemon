@@ -1,5 +1,5 @@
 from databases import Base
-from sqlalchemy import Column, ForeignKey,String,Integer
+from sqlalchemy import Column, ForeignKey,String,Integer, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 class User(Base) :
@@ -18,3 +18,5 @@ class Fav_Pokemon(Base) :
     id = Column(Integer,primary_key=True)
     user_id = Column(Integer,ForeignKey('users.id'),nullable = False)
     pokemon_id = Column(Integer,nullable = False)
+
+    __table_args__ = (UniqueConstraint('user_id','pokemon_id',name = 'user_pokemon_uc'),)
